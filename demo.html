@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Dejavu.js Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/normalize/3.0.3/normalize.min.css">
+    <style>
+        *{box-sizing: border-box;}
+        ul{list-style:none;padding:0;}
+        li{position:relative;padding:0;}
+        figure{width:640px;margin:0;}
+        figcaption{
+            display:block;bottom:0;left:0;position:absolute;
+            width:640px;height:6em;color:white;padding:.5em 0 0 1em;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        figcaption>h3{margin:0;padding:.5em 0;}
+        figcaption>h3{margin:0;padding:0;}
+    </style>
+</head>
+<body>
+    <h1>Dejavu.js Demo</h1>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <ul id="demo">
+        <li><figure>
+            <img src="https://unsplash.it/640/480?image=0" alt="Image 1">
+            <figcaption>
+                <h3>Image 1</h3>
+                <p>Some image placed here.</p>
+            </figcaption>
+        </figure></li>
+        <li><figure>
+            <img src="https://unsplash.it/640/480?image=100" alt="Image 2">
+            <figcaption>
+                <h3>Image 2</h3>
+                <p>Some image placed here.</p>
+            </figcaption>
+        </figure></li>
+        <li><figure>
+            <img src="https://unsplash.it/640/480?image=200" alt="Image 3">
+            <figcaption>
+                <h3>Image 3</h3>
+                <p>Some image placed here.</p>
+            </figcaption>
+        </figure></li>
+        <li><figure>
+            <img src="https://unsplash.it/640/480?image=300" alt="Image 4">
+            <figcaption>
+                <h3>Image 4</h3>
+                <p>Some image placed here.</p>
+            </figcaption>
+        </figure></li>
+        <li><figure>
+            <img src="https://unsplash.it/640/480?image=400" alt="Image 5">
+            <figcaption>
+                <h3>Image 5</h3>
+                <p>Some image placed here.</p>
+            </figcaption>
+        </figure></li>
+    </ul>
+
+    <script src="dejavu.js"></script>
+    <script>
+        Dejavu.debug = true;
+        window.onload = function(){
+            Dejavu('#demo');
+        };
+    </script>
+</body>
+</html>
