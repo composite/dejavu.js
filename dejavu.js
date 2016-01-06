@@ -27,6 +27,7 @@
                 x: w.scrollX || w.pageXOffset || d.documentElement.scrollLeft || d.body.scrollLeft,
                 y: w.scrollY || w.pageYOffset || d.documentElement.scrollTop || d.body.scrollTop
         };}, trace = function(m){if(w.Dejavu.debug) console.debug(m);},
+        screenX = screen.availWidth, screenY = screen.availHeight,
         // dejavu methods
         met  = {
             /**
@@ -77,7 +78,7 @@
                     // if child node has been removed. update and rerun.
                     if(cs[i].parentNode != this){
                         trace(cs[i]);
-                        trace('has been removed from parent. updating...');
+                        trace('[DEJAVU] has been removed from parent. updating...');
                         this.dejavu.update();
                         return this.dejavu.prev();
                     }
@@ -129,7 +130,7 @@
                     this[ns.ch].push(cs[i]);
                 }
                 this[ns.po].LENGTH = this[ns.ch].length;
-                trace('updated as');
+                trace('[DEJAVU] updated as');
                 trace(this[ns.ch]);
 
                 var self = this;
@@ -164,6 +165,13 @@
             off: function(type, fn){
                 //TODO
                 return this.dejavu;
+            },
+            /**
+             * trigger dejavu event
+             * @param  {[type]}   type [description]
+             */
+            emit: function(type){
+                //TODO
             }
         }
 
@@ -188,7 +196,7 @@
 
         if(!isc(root)) root = [root];
 
-        trace('Dejavu initialize');
+        trace('[DEJAVU] Dejavu initialize');
         trace(root);trace(op);
 
         for(var idx = 0, max = root.length; idx < max; idx++){
@@ -198,7 +206,24 @@
             root[idx][ns.op] = op;
 
             root[idx][ns.ev] = function(x, y){
+                var po = this[ns.po];
+                //trace([x,y,screenX,screenY,po.MARGIN,po.STATUS]);trace(po.MODEL);
+                if(
+                    (y + screenY - po.MARGIN) > po.MODEL.top && (y - po.MARGIN) < po.MODEL.bottom &&
+                    (x + screenX - po.MARGIN) > po.MODEL.left && (x - po.MARGIN) < po.MODEL.right
+                ){
+                    if(!po.STATUS){
+                        po.STATUS = true;
+                        trace('[DEJAVU] in your eye side.');
+                    }
 
+                }else{
+                    if(po.STATUS){
+                        po.STATUS = false;
+                        trace('[DEJAVU] out of your eye side.');
+                        po.RANDOM ? this.dejavu.random() : this.dejavu.next();
+                    }
+                }
             };
 
             root[idx].dejavu = {};
@@ -207,7 +232,7 @@
             for(var m in w.Dejavu.fn) ext(root[idx],w.Dejavu.fn,m);
 
             root[idx][ns.po] = {
-                CURRENT: 0, LENGTH: 0,
+                CURRENT: 0, LENGTH: 0, STATUS: false,
                 ENABLED: 'enable' in op ? !!op.enable : w.Dejavu.options.enable,
                 RANDOM:  'random' in op ? !!op.random : w.Dejavu.options.random,
                 MARGIN:  !isNaN(op.margin) ? op.margin : w.Dejavu.options.margin,
@@ -232,7 +257,7 @@
     Dejavu.destroy = function(root){
         var _root = root;
         if(!isc(root)) root = [root];
-        trace('Dejavu destroying');
+        trace('[DEJAVU] Dejavu destroying');
         trace(root);
         for(var idx = 0, max = root.length; idx < max; idx++){
             if(!~inA(DEJAVU_AFFECTED, root[idx])) continue;
@@ -241,8 +266,9 @@
 
                 cs[i].removeAttribute('hidden');
             }
-            delete root[idx].dejavu;
-            for(var x in ns) delete root[idx][ns[x]];
+            //delete root[idx].dejavu;
+            root[idx].dejavu = undefined;
+            for(var x in ns) root[idx][ns[x]] = undefined; //delete root[idx][ns[x]];
             DEJAVU_AFFECTED.splice(inA(root[idx]), 1);
         }
         return _root;
