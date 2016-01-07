@@ -190,7 +190,7 @@
         if(!root) throw new Error('dejavu element(s) are not defined.');
         op = op || w.Dejavu.options;
 
-        if(isS(root)) root = d.querySelectorAll(root);
+        if(isS(root)) root = d.querySelectorAll(root) || d.getElementById(root);
 
         var _root = root, ext = function(a,p,m){a.dejavu[m] = function(){return p[m].apply(a, arguments)};};
 
@@ -314,6 +314,11 @@
         var sc = getS();
         for(var i=0,r=DEJAVU_AFFECTED,l=r.length;i<l;i++)
             r[i][ns.ev].call(r[i], sc.x, sc.y);
+    });
+    //Dejavu global resize event
+    w[EVENT_FUNC](EVENT_ON + 'resize', function(){
+        screenX = screen.availWidth;
+        screenY = screen.availHeight;
     });
 
     //bind to global.
