@@ -207,6 +207,7 @@
                         });
                     fire(this, EVENT_ON + ns.on, e);
                 }
+                return this.dejavu;
             }
         }
 
