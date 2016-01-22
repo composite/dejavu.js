@@ -5,7 +5,7 @@
  *
  * Copyright 2016 Ukjin 'Composite' Yang.
  * Released under the MIT license
- * http://github.com/composite/Dejavu.js/license.md
+ * http://github.com/composite/Dejavu.js/LICENSE
  *
  */
 /*var Dejavu = */!function(w,d){
