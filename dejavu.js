@@ -8,14 +8,30 @@
  * http://github.com/composite/Dejavu.js/license.md
  *
  */
-!function(w,d){
+/*var Dejavu = */!function(w,d){
     'use strict';
+    var isf = function(f){return typeof f === 'function';};
+    if(isf(w.CustomEvent))
+        w.CustomEvent = function(type, params){
+            params = params || { bubbles: false, cancelable: false, detail: void 0 };
+            var b = !!params.bubbles, c = !!params.cancelable, d = params.detail, e;
+            if(isf(document.createEvent)){
+                e = document.createEvent('CustomEvent');
+                e.initCustomEvent(type, b, c, d);
+            }else{
+                e = document.createEventObject();
+                e.bubbles = b;
+                e.cancelable = c;
+                e.detail = d;
+            }
+            return e;
+        };
     //global event and type name
-    var EVENT_FUNC = 'v' != '\v' ? 'addEventListener' : 'attachEvent', EVENT_ON = 'v' != '\v' ? '' : 'on',
+    var vd = void 0,EVENT_FUNC = 'v' != '\v' ? 'addEventListener' : 'attachEvent', EVENT_ON = 'v' != '\v' ? '' : 'on',
         // is enumerable?
         isc = function(ar){return ar.length === [].slice.call(ar, 0).length;},
         // make element with function
-        mkel = function(t, f){var el = d.createElement(t); if(typeof(f) === 'function') f.call(el, t); return el;},
+        mkel = function(t, f){var el = d.createElement(t); if(isf(f)) f.call(el, t); return el;},
         // dejavu members
         ns   = {ev: 'DEJAVU_SCROLLEV', ch: 'DEJAVU_CHILDREN', op: 'DEJAVU_OPTION', po: 'DEJAVU_POSITION', on: 'DEJAVU_EVENT'}, DEJAVU_AFFECTED = [],
         // array indexof
@@ -28,6 +44,7 @@
                 y: w.scrollY || w.pageYOffset || d.documentElement.scrollTop || d.body.scrollTop
         };}, trace = function(m){if(w.Dejavu.debug) console.debug(m);},
         screenX = screen.availWidth, screenY = screen.availHeight,
+        fire = function(target, type, e){ return isf(target.dispatchEvent) ? target.dispatchEvent(e) : target.fireEvent(type, e); },
         // dejavu methods
         met  = {
             /**
@@ -45,7 +62,7 @@
              * @return {Dejavu}    the dejavu object of current element.
              */
             random: function(b){
-                if(b !== undefined) trace(this[ns.po].RANDOM = !!b);
+                if(b !== vd) trace(this[ns.po].RANDOM = !!b);
                 else this.dejavu.render(~~(Math.random() * this[ns.po].LENGTH));
                 return this.dejavu;
             },
@@ -118,7 +135,7 @@
              */
             update: function(b){
 
-                if(b !== undefined) this[ns.po].UPDATE = !!b;
+                if(b !== vd) this[ns.po].UPDATE = !!b;
 
                 this[ns.ch].length = 0;
                 for(var i=0,cs=this.childNodes,len=cs.length;i<len;i++){
@@ -144,6 +161,8 @@
                     trace(self[ns.po].MODEL);
                 }, 0);
 
+                this.dejavu.emit('update');
+
                 return this.dejavu;
             },
             /**
@@ -153,7 +172,9 @@
              * @return {Dejavu}    the dejavu object of current element.
              */
             on: function(type, fn){
-                //TODO
+                if(type in this[ns.po].EVENT && isf(fn)){
+                    this[ns.po].EVENT[type].push(fn);
+                }
                 return this.dejavu;
             },
             /**
@@ -163,7 +184,10 @@
              * @return {Dejavu}    the dejavu object of current element.
              */
             off: function(type, fn){
-                //TODO
+                var idx;
+                if(type in this[ns.po].EVENT && ~(idx = inA(this[ns.po].EVENT[type], fn))){
+                    this[ns.po].EVENT[type].splice(idx, 1);
+                }
                 return this.dejavu;
             },
             /**
@@ -171,7 +195,18 @@
              * @param  {[type]}   type [description]
              */
             emit: function(type){
-                //TODO
+                if(type in this[ns.po].EVENT){
+                    [].shift.call(arguments);
+                    var self = this, args = arguments,
+                        e = w.CustomEvent(ns.on, {
+                            detail: {
+                                args: args, type: type, position: this[ns.po].MODEL,
+                                current: this[ns.po].CURRENT, length: this[ns.po].LENGTH,
+                                inside: this[ns.po].STATUS, enable: this[ns.po].ENABLED
+                            }
+                        });
+                    fire(this, EVENT_ON + ns.on, e);
+                }
             }
         }
 
@@ -215,6 +250,7 @@
                     if(!po.STATUS){
                         po.STATUS = true;
                         trace('[DEJAVU] in your eye side.');
+                        this.dejavu.emit('inside', x, y);
                     }
 
                 }else{
@@ -222,6 +258,7 @@
                         po.STATUS = false;
                         trace('[DEJAVU] out of your eye side.');
                         po.RANDOM ? this.dejavu.random() : this.dejavu.next();
+                        this.dejavu.emit('outside', x, y);
                     }
                 }
             };
@@ -238,12 +275,33 @@
                 MARGIN:  !isNaN(op.margin) ? op.margin : w.Dejavu.options.margin,
                 MODEL:   {top: 0, bottom: 0, right: 0, left: 0},
                 UPDATE:  'update' in op ? !!op.update : w.Dejavu.options.update,
+                EVENT:   {inside: [], outside: [], update: []}
             };
+
+            for(var nm in root[idx][ns.po].EVENT)
+                if(isf(op['on'+nm])) root[idx][ns.po].EVENT[nm].push(op['on'+nm]);
 
             root[idx].dejavu.update();
             root[idx].dejavu.render();
 
+            !function(target){root[idx][EVENT_FUNC](EVENT_ON + ns.on, function(e){
+                if(!e){
+                    e = w.event;
+                    e.currentTarget = target; 
+                    e.preventDefault = function () { event.returnValue = false }; 
+                    e.stopPropagation = function () { event.cancelBubble = true }; 
+                    e.target = event.srcElement || target;
+                }
+                if(e.detail.type in target[ns.po].EVENT)
+                    for(var i = 0, evs = target[ns.po].EVENT[e.detail.type], len = evs.length; i < len; i++){
+                        !function(i, fn){
+                            if(isf(fn)) fn.apply(target, e);
+                        }(i, evs[i]);
+                    }
+            });}(root[idx]);
+
             DEJAVU_AFFECTED.push(root[idx]);
+            if(isf(op.oninit)) op.oninit.call(root[idx], op);
         }
 
         return _root;
@@ -267,8 +325,8 @@
                 cs[i].removeAttribute('hidden');
             }
             //delete root[idx].dejavu;
-            root[idx].dejavu = undefined;
-            for(var x in ns) root[idx][ns[x]] = undefined; //delete root[idx][ns[x]];
+            root[idx].dejavu = vd;
+            for(var x in ns) root[idx][ns[x]] = vd; //delete root[idx][ns[x]];
             DEJAVU_AFFECTED.splice(inA(root[idx]), 1);
         }
         return _root;
@@ -322,6 +380,6 @@
     });
 
     //bind to global.
-    w.Dejavu = Dejavu;
+    return w.Dejavu = Dejavu;
 
 }(window,document);
