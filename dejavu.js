@@ -1,5 +1,5 @@
 /*!
- * dejavu.js v 0.1.0
+ * dejavu.js v 0.2.0
  * http://github.com/composite/Dejavu.js/
  *
  *
@@ -8,11 +8,11 @@
  * http://github.com/composite/Dejavu.js/LICENSE
  *
  */
-/*var Dejavu = */!function(w,d){
+/*var Dejavu = */!function(){
     'use strict';
     var isf = function(f){return typeof f === 'function';};
-    if(isf(w.CustomEvent))
-        w.CustomEvent = function(type, params){
+    if(isf(window.CustomEvent))
+        window.CustomEvent = function(type, params){
             params = params || { bubbles: false, cancelable: false, detail: void 0 };
             var b = !!params.bubbles, c = !!params.cancelable, d = params.detail, e;
             if(isf(document.createEvent)){
@@ -31,7 +31,7 @@
         // is enumerable?
         isc = function(ar){return ar.length === [].slice.call(ar, 0).length;},
         // make element with function
-        mkel = function(t, f){var el = d.createElement(t); if(isf(f)) f.call(el, t); return el;},
+        mkel = function(t, f){var el = document.createElement(t); if(isf(f)) f.call(el, t); return el;},
         // dejavu members
         ns   = {ev: 'DEJAVU_SCROLLEV', ch: 'DEJAVU_CHILDREN', op: 'DEJAVU_OPTION', po: 'DEJAVU_POSITION', on: 'DEJAVU_EVENT'}, DEJAVU_AFFECTED = [],
         // array indexof
@@ -40,10 +40,17 @@
         isS  = function(s){return typeof s === 'string' || s instanceof String;},
         // get scroll position
         getS = function(){return {
-                x: w.scrollX || w.pageXOffset || d.documentElement.scrollLeft || d.body.scrollLeft,
-                y: w.scrollY || w.pageYOffset || d.documentElement.scrollTop || d.body.scrollTop
-        };}, trace = function(m){if(w.Dejavu.debug) console.debug(m);},
-        screenX = screen.availWidth, screenY = screen.availHeight,
+                x: window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft,
+                y: window.scrollY || window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+        };}, trace = function(m){if(window.Dejavu.debug) console.debug(m);},
+        getXY = function(){
+            var h = document.documentElement;
+            return {
+                x: Math.max(h.clientWidth, window.innerWidth || 0),
+                y: Math.max(h.clientHeight, window.innerHeight || 0)
+            };
+        },
+        scr = getXY(),
         fire = function(target, type, e){ return isf(target.dispatchEvent) ? target.dispatchEvent(e) : target.fireEvent(type, e); },
         // dejavu methods
         met  = {
@@ -94,13 +101,12 @@
                 for(var i=0,cs=this[ns.ch],len=cs.length;i<len;i++){
                     // if child node has been removed. update and rerun.
                     if(cs[i].parentNode != this){
-                        trace(cs[i]);
                         trace('[DEJAVU] has been removed from parent. updating...');
                         this.dejavu.update();
                         return this.dejavu.prev();
                     }
                     if(i != n) cs[i].setAttribute('hidden', 'hidden');
-                    else cs[i].removeAttribute('hidden', 'hidden');
+                    else cs[i].removeAttribute('hidden');
                 }
                 return this.dejavu;
             },
@@ -126,7 +132,7 @@
              * @return {Element}    the current element.
              */
             destroy: function(){
-                return w.Dejavu.destroy(this);
+                return window.Dejavu.destroy(this);
             },
             /**
              * update position for moved element position and children.
@@ -138,20 +144,21 @@
                 if(b !== vd) this[ns.po].UPDATE = !!b;
 
                 this[ns.ch].length = 0;
-                for(var i=0,cs=this.childNodes,len=cs.length;i<len;i++){
+                for(var i=0, j=0,cs=this.childNodes,len=cs.length;i<len;i++){
                     if(cs[i].nodeType != 1) continue;
 
-                    if(i != this[ns.po].CURRENT) cs[i].setAttribute('hidden', 'hidden');
-                    else cs[i].removeAttribute('hidden', 'hidden');
+                    if(j != this[ns.po].CURRENT) cs[i].setAttribute('hidden', 'hidden');
+                    else cs[i].removeAttribute('hidden');
 
                     this[ns.ch].push(cs[i]);
+                    j++;
                 }
                 this[ns.po].LENGTH = this[ns.ch].length;
-                trace('[DEJAVU] updated as');
-                trace(this[ns.ch]);
+                trace('[DEJAVU] updated');
 
                 var self = this;
                 setTimeout(function(){
+                    scr = getXY();
                     var rect = self.getBoundingClientRect(), sc = getS();
                     self[ns.po].MODEL = self[ns.po].MODEL || {};
                     self[ns.po].MODEL.top    = rect.top + sc.y;
@@ -198,7 +205,7 @@
                 if(type in this[ns.po].EVENT){
                     [].shift.call(arguments);
                     var self = this, args = arguments,
-                        e = w.CustomEvent(ns.on, {
+                        e = window.CustomEvent(ns.on, {
                             detail: {
                                 args: args, type: type, position: this[ns.po].MODEL,
                                 current: this[ns.po].CURRENT, length: this[ns.po].LENGTH,
@@ -208,12 +215,19 @@
                     fire(this, EVENT_ON + ns.on, e);
                 }
                 return this.dejavu;
+            },
+            /**
+             * returns a target dejavu element.
+             * @return {HTMLElement}    the target element inside dejavu object.
+             */
+            target: function(){
+                return this;
             }
         }
 
     //hidden property support for old browsers (IE < 11)
-    if(typeof(d.hidden) === 'undefined')
-        d.getElementsByTagName('head')[0].appendChild(mkel('style', function(){this.innerHTML = '*[hidden]{display:none;}'}));
+    if(typeof(document.hidden) === 'undefined')
+        document.getElementsByTagName('head')[0].appendChild(mkel('style', function(){this.innerHTML = '*[hidden]{display:none;}'}));
 
     /**
      * Dejavu initialize function from any node you want.
@@ -224,9 +238,9 @@
     var Dejavu = function(root, op){
 
         if(!root) throw new Error('dejavu element(s) are not defined.');
-        op = op || w.Dejavu.options;
+        op = op || window.Dejavu.options;
 
-        if(isS(root)) root = d.querySelectorAll(root) || d.getElementById(root);
+        if(isS(root)) root = document.querySelectorAll(root) || document.getElementById(root);
 
         var _root = root, ext = function(a,p,m){a.dejavu[m] = function(){return p[m].apply(a, arguments)};};
 
@@ -243,21 +257,23 @@
 
             root[idx][ns.ev] = function(x, y){
                 var po = this[ns.po];
-                //trace([x,y,screenX,screenY,po.MARGIN,po.STATUS]);trace(po.MODEL);
                 if(
-                    (y + screenY - po.MARGIN) > po.MODEL.top && (y - po.MARGIN) < po.MODEL.bottom &&
-                    (x + screenX - po.MARGIN) > po.MODEL.left && (x - po.MARGIN) < po.MODEL.right
+                    (y + scr.y - po.MARGIN) > po.MODEL.top && (y + po.MARGIN) < po.MODEL.bottom &&
+                    (x + scr.x - po.MARGIN) > po.MODEL.left && (x + po.MARGIN) < po.MODEL.right
                 ){
                     if(!po.STATUS){
                         po.STATUS = true;
                         trace('[DEJAVU] in your eye side.');
+                        trace([x,y,scr.x,scr.y,po.MARGIN,po.STATUS]);
+                        trace(po.MODEL);
                         this.dejavu.emit('inside', x, y);
                     }
-
                 }else{
                     if(po.STATUS){
                         po.STATUS = false;
                         trace('[DEJAVU] out of your eye side.');
+                        trace([x,y,scr.x,scr.y,po.MARGIN,po.STATUS]);
+                        trace(po.MODEL);
                         po.RANDOM ? this.dejavu.random() : this.dejavu.next();
                         this.dejavu.emit('outside', x, y);
                     }
@@ -267,15 +283,15 @@
             root[idx].dejavu = {};
 
             for(var m in met) ext(root[idx],met,m);
-            for(var m in w.Dejavu.fn) ext(root[idx],w.Dejavu.fn,m);
+            for(var m in window.Dejavu.fn) ext(root[idx],window.Dejavu.fn,m);
 
             root[idx][ns.po] = {
                 CURRENT: 0, LENGTH: 0, STATUS: false,
-                ENABLED: 'enable' in op ? !!op.enable : w.Dejavu.options.enable,
-                RANDOM:  'random' in op ? !!op.random : w.Dejavu.options.random,
-                MARGIN:  !isNaN(op.margin) ? op.margin : w.Dejavu.options.margin,
+                ENABLED: 'enable' in op ? !!op.enable : window.Dejavu.options.enable,
+                RANDOM:  'random' in op ? !!op.random : window.Dejavu.options.random,
+                MARGIN:  !isNaN(op.margin) ? op.margin : window.Dejavu.options.margin,
                 MODEL:   {top: 0, bottom: 0, right: 0, left: 0},
-                UPDATE:  'update' in op ? !!op.update : w.Dejavu.options.update,
+                UPDATE:  'update' in op ? !!op.update : window.Dejavu.options.update,
                 EVENT:   {inside: [], outside: [], update: []}
             };
 
@@ -287,7 +303,7 @@
 
             !function(target){root[idx][EVENT_FUNC](EVENT_ON + ns.on, function(e){
                 if(!e){
-                    e = w.event;
+                    e = window.event;
                     e.currentTarget = target; 
                     e.preventDefault = function () { event.returnValue = false }; 
                     e.stopPropagation = function () { event.cancelBubble = true }; 
@@ -368,19 +384,22 @@
     Dejavu.fn = {};
 
     //Dejavu global scroll event
-    w[EVENT_FUNC](EVENT_ON + 'scroll', function(e){
-        e = e || w.event;
+    window[EVENT_FUNC](EVENT_ON + 'scroll', function(e){
+        e = e || window.event;
         var sc = getS();
         for(var i=0,r=DEJAVU_AFFECTED,l=r.length;i<l;i++)
             r[i][ns.ev].call(r[i], sc.x, sc.y);
     });
     //Dejavu global resize event
-    w[EVENT_FUNC](EVENT_ON + 'resize', function(){
-        screenX = screen.availWidth;
-        screenY = screen.availHeight;
+    window[EVENT_FUNC](EVENT_ON + 'resize', function(){
+        if(Dejavu.DEJAVU_RESIZE) clearTimeout(Dejavu.DEJAVU_RESIZE);
+        Dejavu.DEJAVU_RESIZE = setTimeout(function(){
+            for(var i=0,r=DEJAVU_AFFECTED,l=r.length;i<l;i++)
+                if(r[i][ns.po].UPDATE) r[i].dejavu.update();
+        }, 100);
     });
 
     //bind to global.
-    return w.Dejavu = Dejavu;
+    return window.Dejavu = Dejavu;
 
-}(window,document);
+}();
